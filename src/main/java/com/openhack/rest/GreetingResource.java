@@ -1,4 +1,4 @@
-package com.openhack.resources;
+package com.openhack.rest;
 
 import com.openhack.domain.Person;
 import com.openhack.repository.PersonRepository;

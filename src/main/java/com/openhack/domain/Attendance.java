@@ -1,41 +1,54 @@
 package com.openhack.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.quarkiverse.hibernate.types.json.JsonBinaryType;
 import io.quarkiverse.hibernate.types.json.JsonType;
 import io.quarkiverse.hibernate.types.json.JsonTypes;
 import lombok.Getter;
 import lombok.Setter;
+import org.eclipse.yasson.internal.serializer.BooleanArrayDeserializer;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
+import java.time.Instant;
 import java.util.List;
 
 @Setter
 @Getter
-@Entity(name = "Embeddings")
-@Table(name = "embeddings")
+@Entity(name = "Attendance")
+@Table(name = "attendance")
 @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @TypeDef(name = JsonTypes.JSON, typeClass = JsonType.class)
 @TypeDef(name = JsonTypes.JSON_BIN, typeClass = JsonBinaryType.class)
-public class Embeddings {
-
+public class Attendance {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "authenticated")
+    private Boolean authenticated;
+
+    @Column(name = "mac_address")
+    private String macAddress;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "identifier")
+    private String identifier;
+
     @Type(type = JsonTypes.JSON_BIN)
     @Column(name = "embedding", columnDefinition = JsonTypes.JSON_BIN)
-    private List<Double> embedding;
+    private List<Double> embeddings;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
-//    @JsonIgnoreProperties(value = {"embeddings", "files"}, allowSetters = true)
-    private Employee employee;
+    @Column(name = "face_detected")
+    private Boolean faceDetected;
+
+    @Column(name = "temperature")
+    private Double temperature;
 
 
 }

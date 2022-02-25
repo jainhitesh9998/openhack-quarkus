@@ -18,5 +18,4 @@ public class ErrorMessage {
     String error;
     String message;
     String path;
-
 }

@@ -1,10 +1,12 @@
 package com.openhack.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.List;
 
 @Setter
@@ -19,7 +21,7 @@ public class Employee {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "identifier")
+    @Column(name = "identifier", unique = true)
     private String identifier;
 
     @Column(name = "name")
@@ -32,6 +34,7 @@ public class Employee {
     private List<File> files;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+//    @JsonIgnoreProperties(value = {"employee"}, allowGetters = true)
     private List<Embeddings> embeddings;
 
 }

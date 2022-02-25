@@ -1,6 +1,18 @@
 create sequence hibernate_sequence start 1 increment 1;
 create sequence sequenceGenerator start 1 increment 50;
 
+    create table attendance (
+       id int8 not null,
+        authenticated boolean,
+        created_at timestamp,
+        embedding jsonb,
+        face_detected boolean,
+        identifier varchar(255),
+        mac_address varchar(255),
+        temperature float8,
+        primary key (id)
+    );
+
     create table embeddings (
        id int8 not null,
         embedding jsonb,
@@ -36,6 +48,9 @@ create sequence sequenceGenerator start 1 increment 50;
         status int4,
         primary key (id)
     );
+
+    alter table if exists employee 
+       add constraint UK_5rh0wqupnwpehb050wgokpc4n unique (identifier);
 
     alter table if exists embeddings 
        add constraint FK1q9f5dh50n84cwdjb8vin1ioy 
