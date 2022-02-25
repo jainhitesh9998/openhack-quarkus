@@ -171,7 +171,7 @@ public class EmployeeResource {
     @PermitAll
     @Path("/authenticate")
     public Response authenticate(@MultipartForm MultipartFormDataInput input, @QueryParam("mac-address") String mac_address, @QueryParam("temperature") Double temperature) throws IOException {
-        return Response.ok().entity(employeeService.authenticate(input, mac_address)).build();
+        return Response.ok().entity(employeeService.authenticate(input, mac_address, temperature)).build();
     }
 
 }

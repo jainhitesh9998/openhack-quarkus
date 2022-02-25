@@ -1,5 +1,9 @@
 package com.openhack.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.openhack.domain.Embeddings;
 import com.openhack.domain.Employee;
 import com.openhack.exceptions.CustomException;
@@ -10,13 +14,26 @@ import com.openhack.service.EmployeeService;
 import com.openhack.service.dto.AttendanceDTO;
 import com.openhack.service.dto.EmbeddingDTO;
 import com.openhack.service.dto.EmployeeDTO;
+import com.openhack.service.dto.request.ElasticEmbeddingRequestDTO;
+import com.openhack.service.dto.request.ElasticSearchRequestDTO;
 import com.openhack.service.dto.request.EmbeddingRequestDTO;
 import com.openhack.service.AttendanceService;
 import com.openhack.service.mapper.EmbeddingMapper;
 import com.openhack.service.mapper.EmployeeMapper;
+import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.util.EntityUtils;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.script.Script;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.slf4j.Logger;
@@ -26,6 +43,7 @@ import javax.transaction.Transactional;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,7 +60,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmbeddingsRepository embeddingsRepository;
     private final EmbeddingMapper embeddingsMapper;
     private final AttendanceService attendanceService;
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper, Logger log, JsonWebToken jsonWebToken, @RestClient EmbeddingsService embeddingsService, EmbeddingsRepository embeddingsRepository, EmbeddingMapper embeddingsMapper, AttendanceService attendanceService) {
+    private final org.elasticsearch.client.RestClient restClient;
+    private final RestHighLevelClient restHighLevelClient;
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper, Logger log, JsonWebToken jsonWebToken, @RestClient EmbeddingsService embeddingsService, EmbeddingsRepository embeddingsRepository, EmbeddingMapper embeddingsMapper, AttendanceService attendanceService, org.elasticsearch.client.RestClient restClient, RestHighLevelClient restHighLevelClient) {
         this.employeeRepository = employeeRepository;
         this.employeeMapper = employeeMapper;
         LOG = log;
@@ -51,6 +71,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         this.embeddingsRepository = embeddingsRepository;
         this.embeddingsMapper = embeddingsMapper;
         this.attendanceService = attendanceService;
+        this.restClient = restClient;
+        this.restHighLevelClient = restHighLevelClient;
     }
 
     @Override
@@ -115,23 +137,84 @@ public class EmployeeServiceImpl implements EmployeeService {
         embeddingDTO.setEmployee(employee);
         Embeddings embeddings1 = embeddingsMapper.toEntity(embeddingDTO);
         embeddingsRepository.persist(embeddings1);
+        LOG.info("{}", restClient.getNodes().get(0).toString());
+        Request request =  new Request(
+                "POST",
+                "/face_vector/_doc/"
+        );
+        ElasticEmbeddingRequestDTO embeddingRequestDTO = new ElasticEmbeddingRequestDTO();
+        embeddingRequestDTO.setFace_vector(embeddings1.getEmbedding());
+        embeddingRequestDTO.setId(embeddings1.getEmployee().getId());
+        request.setJsonEntity(JsonObject.mapFrom(embeddingRequestDTO).toString());
+
+        Response response = restClient.performRequest(request);
+        LOG.info("{} {}", response.getStatusLine().getStatusCode(), response.getEntity().toString());
         LOG.info("{} ", embeddingsMapper.toDto(embeddings1));
         return embeddings;
     }
 
     @Override
-    public AttendanceDTO authenticate(MultipartFormDataInput formDataInput, String macAddress) throws IOException {
+    public AttendanceDTO authenticate(MultipartFormDataInput formDataInput, String macAddress, Double temperature) throws IOException {
         List<Double> embeddings = processMultiPart(formDataInput);
         Boolean authenticated = false;
         Boolean faceDetected = false;
         String identifier = "";
+        ElasticSearchRequestDTO elasticSearchRequestDTO = new ElasticSearchRequestDTO();
+        elasticSearchRequestDTO.setQuery_vector(embeddings);
+        String query = "{\n" +
+                "  \"query\":{\n" +
+                "  \"script_score\": {\n" +
+                "    \"query\": {\"match_all\": {}},\n" +
+                "    \"script\": {\n" +
+                "      \"source\": \"doc['face_vector'].size() == 0 ? 0 :cosineSimilarity(params.query_vector, 'face_vector') + 1.0\",\n" +
+                "      \"params\":  " + JsonObject.mapFrom(elasticSearchRequestDTO).toString() +
+                "}\n" +
+                "  }\n" +
+                "},\n" +
+                "\"size\": 1\n" +
+                "}";
+        LOG.info("query {}", query);
+        Request request =  new Request(
+                "GET",
+                "/face_vector/_search"
+        );
+        request.setJsonEntity(query);
+
+//        restHighLevelClient
+        Response response = restClient.performRequest(request);
+        String responseBody = EntityUtils.toString(response.getEntity());
+//        JsonElement jsonElement = JsonParser.parseString(responseBody);
+//        SearchResponse searchResponse = new SearchResponse(StreamInput.wrap(response.getEntity().getContent().readAllBytes()));
+//        SearchResponse
+//        SearchResponse searchResponse = new SearchResponse();
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> objectMap = objectMapper.readValue(responseBody, Map.class);
+        Map<String, Object> hits = (Map<String, Object>) objectMap.get("hits");
+        List<Map<String, Object>> innerHits = (List<Map<String, Object>>) hits.get("hits");
+        Map<String, Object> source = null;
+        if(innerHits.isEmpty()){
+            throw  new CustomException("No Match Found");
+        }
+        source = (Map<String, Object>) innerHits.get(0).get("_source");
+        Double score = (Double) innerHits.get(0).get("_score");
+        Integer id = (Integer) source.get("id");
+        LOG.info("{} ", responseBody);
+        LOG.info("{} {}",score, id);
         AttendanceDTO attendanceDTO = new AttendanceDTO();
-        attendanceDTO.setAuthenticated(authenticated);
-        attendanceDTO.setEmbeddings(embeddings);
-        attendanceDTO.setFaceDetected(faceDetected);
-        attendanceDTO.setCreatedAt(Instant.now());
-        attendanceDTO.setIdentifier(identifier);
-        attendanceDTO.setMacAddress(macAddress);
+        if(score > 1.9 && temperature < 99.0) {
+
+            attendanceDTO.setAuthenticated(true);
+            attendanceDTO.setFaceDetected(score > 1.9);
+            attendanceDTO.setCreatedAt(Instant.now());
+            attendanceDTO.setIdentifier(String.valueOf(id));
+            attendanceDTO.setMacAddress(macAddress);
+        } else {
+            attendanceDTO.setAuthenticated(false);
+            attendanceDTO.setFaceDetected(score > 1.9);
+            attendanceDTO.setCreatedAt(Instant.now());
+            attendanceDTO.setIdentifier(String.valueOf(id));
+            attendanceDTO.setMacAddress(macAddress);
+        }
         return attendanceService.save(attendanceDTO);
     }
 
