@@ -18,4 +18,5 @@ public interface EmployeeService {
     List<Double> retriveEmbedding(MultipartFormDataInput embeddingRequestDTO) throws IOException;
     AttendanceDTO authenticate(MultipartFormDataInput formDataInput, String macAddress, Double temperature) throws IOException;
     List<AttendanceDTO> getAttendanceRecordsForEmployee();
+    Optional<EmployeeDTO> getProfile();
 }

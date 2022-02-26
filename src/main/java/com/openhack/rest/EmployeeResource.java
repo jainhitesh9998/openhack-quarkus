@@ -182,5 +182,13 @@ public class EmployeeResource {
         return Response.status(200).entity(employeeService.getAttendanceRecordsForEmployee()).build();
     }
 
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/profile")
+    public Response getProfile(){
+        return Response.status(200).entity(employeeService.getProfile()).build();
+    }
+
 
 }

@@ -214,6 +214,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         return attendanceService.findByIdentifier(employeeDTO.get().getId());
     }
 
+    @Override
+    public Optional<EmployeeDTO> getProfile() {
+        return findByIdentifier(jsonWebToken.getClaim("preferred_username"));
+    }
+
 
     private List<Double> processMultiPart(MultipartFormDataInput formDataInput) throws IOException {
         Map<String, List<InputPart>> uploadForm = formDataInput.getFormDataMap();
