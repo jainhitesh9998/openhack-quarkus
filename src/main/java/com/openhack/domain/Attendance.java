@@ -5,7 +5,6 @@ import io.quarkiverse.hibernate.types.json.JsonType;
 import io.quarkiverse.hibernate.types.json.JsonTypes;
 import lombok.Getter;
 import lombok.Setter;
-import org.eclipse.yasson.internal.serializer.BooleanArrayDeserializer;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
@@ -38,7 +37,7 @@ public class Attendance {
     private Instant createdAt;
 
     @Column(name = "identifier")
-    private String identifier;
+    private Long identifier;
 
     @Type(type = JsonTypes.JSON_BIN)
     @Column(name = "embedding", columnDefinition = JsonTypes.JSON_BIN)
@@ -49,6 +48,9 @@ public class Attendance {
 
     @Column(name = "temperature")
     private Double temperature;
+
+    @Column(name = "score")
+    private Long score;
 
 
 }

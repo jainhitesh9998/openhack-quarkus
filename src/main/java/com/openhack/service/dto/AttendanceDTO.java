@@ -15,8 +15,9 @@ public class AttendanceDTO implements Serializable {
     private Boolean authenticated;
     private String macAddress;
     private Instant createdAt;
-    private String identifier;
+    private Long identifier;
     private List<Double> embeddings;
-    private Boolean faceDetected;
+    private Boolean faceIdentified;
     private Double temperature;
+    private Double score;
 }

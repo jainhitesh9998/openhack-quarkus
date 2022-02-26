@@ -174,4 +174,13 @@ public class EmployeeResource {
         return Response.ok().entity(employeeService.authenticate(input, mac_address, temperature)).build();
     }
 
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/attendance")
+    public Response getAttendanceOfEmployee(){
+        return Response.status(200).entity(employeeService.getAttendanceRecordsForEmployee()).build();
+    }
+
+
 }

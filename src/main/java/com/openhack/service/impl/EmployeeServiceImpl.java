@@ -1,15 +1,12 @@
 package com.openhack.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.openhack.domain.Embeddings;
 import com.openhack.domain.Employee;
 import com.openhack.exceptions.CustomException;
 import com.openhack.repository.EmbeddingsRepository;
 import com.openhack.repository.EmployeeRepository;
 import com.openhack.rest.client.EmbeddingsService;
+import com.openhack.service.AttendanceService;
 import com.openhack.service.EmployeeService;
 import com.openhack.service.dto.AttendanceDTO;
 import com.openhack.service.dto.EmbeddingDTO;
@@ -17,23 +14,16 @@ import com.openhack.service.dto.EmployeeDTO;
 import com.openhack.service.dto.request.ElasticEmbeddingRequestDTO;
 import com.openhack.service.dto.request.ElasticSearchRequestDTO;
 import com.openhack.service.dto.request.EmbeddingRequestDTO;
-import com.openhack.service.AttendanceService;
 import com.openhack.service.mapper.EmbeddingMapper;
 import com.openhack.service.mapper.EmployeeMapper;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
-import org.elasticsearch.script.Script;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.slf4j.Logger;
@@ -43,7 +33,6 @@ import javax.transaction.Transactional;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -61,18 +50,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmbeddingMapper embeddingsMapper;
     private final AttendanceService attendanceService;
     private final org.elasticsearch.client.RestClient restClient;
-    private final RestHighLevelClient restHighLevelClient;
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper, Logger log, JsonWebToken jsonWebToken, @RestClient EmbeddingsService embeddingsService, EmbeddingsRepository embeddingsRepository, EmbeddingMapper embeddingsMapper, AttendanceService attendanceService, org.elasticsearch.client.RestClient restClient, RestHighLevelClient restHighLevelClient) {
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper, Logger log, JsonWebToken jsonWebToken, @RestClient EmbeddingsService embeddingsService, EmbeddingsRepository embeddingsRepository, EmbeddingMapper embeddingsMapper, AttendanceService attendanceService, org.elasticsearch.client.RestClient restClient) {
         this.employeeRepository = employeeRepository;
         this.employeeMapper = employeeMapper;
-        LOG = log;
+        this.LOG = log;
         this.jsonWebToken = jsonWebToken;
         this.embeddingsService = embeddingsService;
         this.embeddingsRepository = embeddingsRepository;
         this.embeddingsMapper = embeddingsMapper;
         this.attendanceService = attendanceService;
         this.restClient = restClient;
-        this.restHighLevelClient = restHighLevelClient;
     }
 
     @Override
@@ -83,6 +70,11 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Optional<EmployeeDTO> findById(Long id) {
         return employeeRepository.findByIdOptional(id).map(employeeMapper::toDto);
+    }
+
+    @Override
+    public Optional<EmployeeDTO> findByIdentifier(String username) {
+        return employeeRepository.findByIdentifierOptional(username).map(employeeMapper::toDto);
     }
 
     @Override
@@ -180,42 +172,46 @@ public class EmployeeServiceImpl implements EmployeeService {
         );
         request.setJsonEntity(query);
 
-//        restHighLevelClient
         Response response = restClient.performRequest(request);
         String responseBody = EntityUtils.toString(response.getEntity());
-//        JsonElement jsonElement = JsonParser.parseString(responseBody);
-//        SearchResponse searchResponse = new SearchResponse(StreamInput.wrap(response.getEntity().getContent().readAllBytes()));
-//        SearchResponse
-//        SearchResponse searchResponse = new SearchResponse();
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> objectMap = objectMapper.readValue(responseBody, Map.class);
-        Map<String, Object> hits = (Map<String, Object>) objectMap.get("hits");
-        List<Map<String, Object>> innerHits = (List<Map<String, Object>>) hits.get("hits");
-        Map<String, Object> source = null;
-        if(innerHits.isEmpty()){
+        JsonObject json = new JsonObject(responseBody);
+        JsonArray hits = json.getJsonObject("hits").getJsonArray("hits");
+        LOG.info("search {}", hits.toString());
+
+        if(hits.isEmpty()){
             throw  new CustomException("No Match Found");
         }
-        source = (Map<String, Object>) innerHits.get(0).get("_source");
-        Double score = (Double) innerHits.get(0).get("_score");
-        Integer id = (Integer) source.get("id");
+        JsonObject source = hits.getJsonObject(0);
+
+        Double score = source.getDouble("_score");
+        Integer id =  source.getJsonObject("_source").getInteger("id");
         LOG.info("{} ", responseBody);
         LOG.info("{} {}",score, id);
         AttendanceDTO attendanceDTO = new AttendanceDTO();
+
         if(score > 1.9 && temperature < 99.0) {
 
             attendanceDTO.setAuthenticated(true);
-            attendanceDTO.setFaceDetected(score > 1.9);
-            attendanceDTO.setCreatedAt(Instant.now());
-            attendanceDTO.setIdentifier(String.valueOf(id));
-            attendanceDTO.setMacAddress(macAddress);
+            attendanceDTO.setFaceIdentified(true);
         } else {
             attendanceDTO.setAuthenticated(false);
-            attendanceDTO.setFaceDetected(score > 1.9);
-            attendanceDTO.setCreatedAt(Instant.now());
-            attendanceDTO.setIdentifier(String.valueOf(id));
-            attendanceDTO.setMacAddress(macAddress);
+            attendanceDTO.setFaceIdentified(score > 1.9);
         }
+
+        attendanceDTO.setCreatedAt(Instant.now());
+        attendanceDTO.setScore(score);
+        attendanceDTO.setIdentifier(Long.valueOf(id));
+        attendanceDTO.setMacAddress(macAddress);
         return attendanceService.save(attendanceDTO);
+    }
+
+    @Override
+    public List<AttendanceDTO> getAttendanceRecordsForEmployee() {
+        Optional<EmployeeDTO> employeeDTO = findByIdentifier(jsonWebToken.getClaim("preferred_username"));
+        if(employeeDTO.isEmpty()){
+            return List.of();
+        }
+        return attendanceService.findByIdentifier(employeeDTO.get().getId());
     }
 
 

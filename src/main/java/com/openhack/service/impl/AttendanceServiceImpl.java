@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.transaction.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Transactional
@@ -29,4 +31,11 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendanceRepository.persist(attendance);
         return attendanceMapper.toDto(attendance);
     }
+
+    @Override
+    public List<AttendanceDTO> findByIdentifier(Long id) {
+        return attendanceRepository.findByIdentifier(id).stream().map(attendanceMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
 }

@@ -7,8 +7,9 @@ create sequence sequenceGenerator start 1 increment 50;
         created_at timestamp,
         embedding jsonb,
         face_detected boolean,
-        identifier varchar(255),
+        identifier int8,
         mac_address varchar(255),
+        score int8,
         temperature float8,
         primary key (id)
     );
