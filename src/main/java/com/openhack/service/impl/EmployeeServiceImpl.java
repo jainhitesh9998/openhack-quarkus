@@ -187,17 +187,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         Integer id =  source.getJsonObject("_source").getInteger("id");
         LOG.info("{} ", responseBody);
         LOG.info("{} {}",score, id);
+        Boolean personExists = findById(Long.valueOf(id)).isEmpty();
         AttendanceDTO attendanceDTO = new AttendanceDTO();
-
-        if(score > 1.9 && temperature < 99.0) {
-
+        if(score > 1.9 && temperature < 99.0 && personExists) {
             attendanceDTO.setAuthenticated(true);
             attendanceDTO.setFaceIdentified(true);
-        } else {
+        }  else {
             attendanceDTO.setAuthenticated(false);
             attendanceDTO.setFaceIdentified(score > 1.9);
         }
-
         attendanceDTO.setCreatedAt(Instant.now());
         attendanceDTO.setScore(score);
         attendanceDTO.setIdentifier(Long.valueOf(id));
