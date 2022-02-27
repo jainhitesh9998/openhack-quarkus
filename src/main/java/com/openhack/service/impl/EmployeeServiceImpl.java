@@ -187,9 +187,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         Integer id =  source.getJsonObject("_source").getInteger("id");
         LOG.info("{} ", responseBody);
         LOG.info("{} {}",score, id);
-        Boolean personExists = findById(Long.valueOf(id)).isEmpty();
+        Boolean personDoesntExist = findById(Long.valueOf(id)).isEmpty();
         AttendanceDTO attendanceDTO = new AttendanceDTO();
-        if(score > 1.9 && temperature < 99.0 && personExists) {
+        if(score > 1.9 && temperature < 99.0 && !personDoesntExist) {
             attendanceDTO.setAuthenticated(true);
             attendanceDTO.setFaceIdentified(true);
         }  else {
