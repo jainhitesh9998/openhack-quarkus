@@ -20,6 +20,7 @@ import org.jboss.resteasy.reactive.MultipartForm;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Any;
 import javax.ws.rs.*;
@@ -70,7 +71,8 @@ public class EmployeeResource {
     }
 
     @GET
-    @Path("/{employeeId}")
+    @RolesAllowed("ADMIN")
+    @Path("/profile/{employeeId}")
     @APIResponses(
             value = {
                     @APIResponse(
