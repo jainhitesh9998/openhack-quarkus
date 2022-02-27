@@ -9,7 +9,7 @@ create sequence sequenceGenerator start 1 increment 50;
         face_detected boolean,
         identifier int8,
         mac_address varchar(255),
-        score int8,
+        score float8,
         temperature float8,
         primary key (id)
     );

@@ -50,7 +50,7 @@ public class Attendance {
     private Double temperature;
 
     @Column(name = "score")
-    private Long score;
+    private Double score;
 
 
 }
