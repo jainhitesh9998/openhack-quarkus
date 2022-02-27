@@ -15,4 +15,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build . --file Dockerfile --tag openhack-quarkus:$(date +%s)
+      
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        tags: user/openhack-quarkus:latest
+        secrets: |
+          GIT_AUTH_TOKEN=${{ secrets.MYTOKEN }}
