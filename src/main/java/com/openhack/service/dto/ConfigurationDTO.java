@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.persistence.Column;
 import java.io.Serializable;
+import java.time.Instant;
 
 @RegisterForReflection
 @Data
@@ -21,5 +22,9 @@ public class ConfigurationDTO implements Serializable {
 
     private Boolean status;
 
-    private Boolean location;
+    private String location;
+
+    private Instant createdAt;
+
+    private Instant updatedAt;
 }

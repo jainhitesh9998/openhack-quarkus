@@ -16,12 +16,14 @@ create sequence sequenceGenerator start 1 increment 50;
 
     create table configuration (
        id int8 not null,
+        created_at timestamp,
         device_identifier varchar(255),
         device_name varchar(255),
         device_type varchar(255),
         enabled boolean,
-        location boolean,
+        location varchar(255),
         status boolean,
+        updated_at timestamp,
         primary key (id)
     );
 

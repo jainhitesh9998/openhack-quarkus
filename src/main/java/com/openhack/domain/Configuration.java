@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
+import java.time.Instant;
 
 @Setter
 @Getter
@@ -34,7 +35,13 @@ public class Configuration {
     private Boolean status;
 
     @Column(name = "location")
-    private Boolean location;
+    private String location;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
 
 }
 
