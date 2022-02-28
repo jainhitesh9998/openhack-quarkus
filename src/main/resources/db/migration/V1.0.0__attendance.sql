@@ -14,6 +14,17 @@ create sequence sequenceGenerator start 1 increment 50;
         primary key (id)
     );
 
+    create table configuration (
+       id int8 not null,
+        device_identifier varchar(255),
+        device_name varchar(255),
+        device_type varchar(255),
+        enabled boolean,
+        location boolean,
+        status boolean,
+        primary key (id)
+    );
+
     create table embeddings (
        id int8 not null,
         embedding jsonb,
@@ -49,6 +60,9 @@ create sequence sequenceGenerator start 1 increment 50;
         status int4,
         primary key (id)
     );
+
+    alter table if exists configuration 
+       add constraint UK_maesvpohv6qh8dh6kygxun3c7 unique (device_identifier);
 
     alter table if exists employee 
        add constraint UK_5rh0wqupnwpehb050wgokpc4n unique (identifier);
