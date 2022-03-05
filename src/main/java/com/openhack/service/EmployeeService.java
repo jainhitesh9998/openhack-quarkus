@@ -15,6 +15,7 @@ public interface EmployeeService {
     Optional<EmployeeDTO> findById(Long id);
     Optional<EmployeeDTO> findByIdentifier(String username);
     EmployeeDTO save(EmployeeDTO employeeDTO);
+    EmployeeDTO update(EmployeeDTO employeeDTO);
     List<Double> retriveEmbedding(MultipartFormDataInput embeddingRequestDTO) throws IOException;
     AttendanceDTO authenticate(MultipartFormDataInput formDataInput, String macAddress, Double temperature) throws IOException;
     List<AttendanceDTO> getAttendanceRecordsForEmployee();

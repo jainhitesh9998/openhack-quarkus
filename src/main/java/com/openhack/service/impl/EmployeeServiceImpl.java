@@ -11,11 +11,12 @@ import com.openhack.service.EmployeeService;
 import com.openhack.service.dto.AttendanceDTO;
 import com.openhack.service.dto.EmbeddingDTO;
 import com.openhack.service.dto.EmployeeDTO;
-import com.openhack.service.dto.request.ElasticEmbeddingRequestDTO;
 import com.openhack.service.dto.request.ElasticSearchRequestDTO;
 import com.openhack.service.dto.request.EmbeddingRequestDTO;
 import com.openhack.service.mapper.EmbeddingMapper;
 import com.openhack.service.mapper.EmployeeMapper;
+import com.openhack.service.redis.EmbeddingsCache;
+import io.quarkus.redis.client.RedisClient;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.IOUtils;
@@ -50,7 +51,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmbeddingMapper embeddingsMapper;
     private final AttendanceService attendanceService;
     private final org.elasticsearch.client.RestClient restClient;
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper, Logger log, JsonWebToken jsonWebToken, @RestClient EmbeddingsService embeddingsService, EmbeddingsRepository embeddingsRepository, EmbeddingMapper embeddingsMapper, AttendanceService attendanceService, org.elasticsearch.client.RestClient restClient) {
+    private final RedisClient redisClient;
+    private final EmbeddingsCache embeddingsCache;
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper, Logger log, JsonWebToken jsonWebToken, @RestClient EmbeddingsService embeddingsService, EmbeddingsRepository embeddingsRepository, EmbeddingMapper embeddingsMapper, AttendanceService attendanceService, org.elasticsearch.client.RestClient restClient, RedisClient redisClient, EmbeddingsCache embeddingsCache) {
         this.employeeRepository = employeeRepository;
         this.employeeMapper = employeeMapper;
         this.LOG = log;
@@ -60,6 +63,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         this.embeddingsMapper = embeddingsMapper;
         this.attendanceService = attendanceService;
         this.restClient = restClient;
+        this.redisClient = redisClient;
+        this.embeddingsCache = embeddingsCache;
     }
 
     @Override
@@ -90,6 +95,26 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    public EmployeeDTO update(EmployeeDTO employeeDTO) {
+        Optional<Employee> employee = employeeRepository.findByIdOptional(employeeDTO.getId());
+        if(employee.isEmpty()){
+            throw new CustomException("Employee not registered in system");
+        }
+        employeeMapper.partialUpdate(employee.get(), employeeDTO);
+        employeeRepository.persist(employee.get());
+        Optional<Embeddings> embeddings = embeddingsRepository.findByIdentifierOptional(employee.get().getId());
+        if(employeeDTO.getEnabled() != null){
+            if(employeeDTO.getEnabled()){
+                embeddings.ifPresent(value -> embeddingsCache.set(employeeDTO.getId().toString(), value.getEmbedding().toString()));
+            } else {
+                embeddingsCache.remove(employeeDTO.getId().toString());
+            }
+        }
+        return employeeMapper.toDto(employee.get());
+
+    }
+
+    @Override
     public List<Double> retriveEmbedding(MultipartFormDataInput formDataInput) throws IOException {
         Map<String, List<InputPart>> uploadForm = formDataInput.getFormDataMap();
         List<String> fileNames = new ArrayList<>();
@@ -106,6 +131,8 @@ public class EmployeeServiceImpl implements EmployeeService {
                 String encoded = Base64.getEncoder().encodeToString(bytes);
                 EmbeddingRequestDTO embeddingRequestDTO = new EmbeddingRequestDTO();
                 embeddingRequestDTO.setImage(encoded);
+                LOG.info("emdedding dto {}", embeddingRequestDTO
+                );
                 embeddings = embeddingsService.getEmbeddings(embeddingRequestDTO);
         }
         if(embeddings == null){
@@ -119,6 +146,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             employee.setIdentifier(username);
             employee.setEncryptionKey("");
             employee.setName(jsonWebToken.getName());
+            employee.setEnabled(true);
             employeeRepository.persist(employee);
         } else {
             employee = employeeOptional.get();
@@ -129,19 +157,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         embeddingDTO.setEmployee(employee);
         Embeddings embeddings1 = embeddingsMapper.toEntity(embeddingDTO);
         embeddingsRepository.persist(embeddings1);
-        LOG.info("{}", restClient.getNodes().get(0).toString());
-        Request request =  new Request(
-                "POST",
-                "/face_vector/_doc/"
-        );
-        ElasticEmbeddingRequestDTO embeddingRequestDTO = new ElasticEmbeddingRequestDTO();
-        embeddingRequestDTO.setFace_vector(embeddings1.getEmbedding());
-        embeddingRequestDTO.setId(embeddings1.getEmployee().getId());
-        request.setJsonEntity(JsonObject.mapFrom(embeddingRequestDTO).toString());
-
-        Response response = restClient.performRequest(request);
-        LOG.info("{} {}", response.getStatusLine().getStatusCode(), response.getEntity().toString());
         LOG.info("{} ", embeddingsMapper.toDto(embeddings1));
+        LOG.info(" {} ", embeddingDTO.getEmbedding().toString());
+        embeddingsCache.set(embeddingDTO.getEmployee().getId().toString(), embeddingDTO.getEmbedding().toString());
         return embeddings;
     }
 
@@ -199,7 +217,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         attendanceDTO.setCreatedAt(Instant.now());
         attendanceDTO.setScore(score);
         attendanceDTO.setIdentifier(Long.valueOf(id));
-        attendanceDTO.setMacAddress(macAddress);
+        attendanceDTO.setDeviceIdentifier(macAddress);
         return attendanceService.save(attendanceDTO);
     }
 

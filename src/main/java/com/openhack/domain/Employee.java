@@ -30,6 +30,9 @@ public class Employee {
     @Column(name = "encryption_key")
     private String encryptionKey;
 
+    @Column(name = "enabled")
+    private Boolean enabled;
+
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     private List<File> files;
 

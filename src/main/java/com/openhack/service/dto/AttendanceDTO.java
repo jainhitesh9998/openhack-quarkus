@@ -13,7 +13,7 @@ import java.util.List;
 public class AttendanceDTO implements Serializable {
     private Long id;
     private Boolean authenticated;
-    private String macAddress;
+    private String deviceIdentifier;
     private Instant createdAt;
     private Long identifier;
     private List<Double> embeddings;

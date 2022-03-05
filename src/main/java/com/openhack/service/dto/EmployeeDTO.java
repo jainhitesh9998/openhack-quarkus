@@ -19,6 +19,8 @@ public class EmployeeDTO implements Serializable {
 
     private String encryptionKey;
 
+    private Boolean enabled;
+
 //    private List<File> files;
 //
 //    private List<Embeddings> embeddings;

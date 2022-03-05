@@ -6,9 +6,9 @@ create sequence sequenceGenerator start 1 increment 50;
         authenticated boolean,
         created_at timestamp,
         embedding jsonb,
-        face_detected boolean,
+        face_identified boolean,
         identifier int8,
-        mac_address varchar(255),
+        device_identifier varchar(255),
         score float8,
         temperature float8,
         primary key (id)
@@ -39,6 +39,7 @@ create sequence sequenceGenerator start 1 increment 50;
         encryption_key varchar(255),
         identifier varchar(255),
         name varchar(255),
+        enabled boolean,
         primary key (id)
     );
 

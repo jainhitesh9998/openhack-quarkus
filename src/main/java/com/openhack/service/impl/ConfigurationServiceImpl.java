@@ -64,10 +64,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         if(configurationDb.isEmpty()){
             throw new CustomException("Data Not Present In DB");
         }
-        ConfigurationChangeDTO configurationChangeDTO = new ConfigurationChangeDTO();
-        configurationChangeDTO.setDeviceIdentifier(configurationDTO.getDeviceIdentifier());
-        configurationChangeDTO.setEnabled(configurationDTO.getEnabled());
-        configurationProducer.send(configurationChangeDTO);
+        if(configurationDTO.getEnabled() != null) {
+            ConfigurationChangeDTO configurationChangeDTO = new ConfigurationChangeDTO();
+            configurationChangeDTO.setDeviceIdentifier(configurationDTO.getDeviceIdentifier());
+            configurationChangeDTO.setEnabled(configurationDTO.getEnabled());
+            configurationProducer.send(configurationChangeDTO);
+        }
 //        configurationProducer.publish(configurationChangeDTO);
 //        LOG.info("{} message sent", configurationChangeDTOMulti.emitOn());
         configurationDTO.setUpdatedAt(Instant.now());
@@ -101,6 +103,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             LOG.info("device Not Found");
         } else {
             ConfigurationDTO configurationDTO = optionalConfigurationDTO.get();
+            configurationDTO.setEnabled(null);
             configurationDTO.setStatus(status);
             update(configurationDTO);
         }

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 
 @ApplicationScoped
 public class ConfigurationConsumer {
@@ -18,6 +19,7 @@ public class ConfigurationConsumer {
     @Inject
     ConfigurationService configurationService;
 
+    @Transactional
     @Incoming("topic-status")
     public void process(byte[] raw){
         String data = new String(raw);

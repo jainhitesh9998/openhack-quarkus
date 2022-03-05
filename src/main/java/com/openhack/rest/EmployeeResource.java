@@ -172,7 +172,7 @@ public class EmployeeResource {
     @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
     @Path("/authenticate")
-    public Response authenticate(@MultipartForm MultipartFormDataInput input, @QueryParam("mac-address") String mac_address, @QueryParam("temperature") Double temperature) throws IOException {
+    public Response authenticate(@MultipartForm MultipartFormDataInput input, @QueryParam("device-identifier") String mac_address, @QueryParam("temperature") Double temperature) throws IOException {
         return Response.ok().entity(employeeService.authenticate(input, mac_address, temperature)).build();
     }
 
@@ -182,6 +182,14 @@ public class EmployeeResource {
     @Path("/attendance")
     public Response getAttendanceOfEmployee(){
         return Response.status(200).entity(employeeService.getAttendanceRecordsForEmployee()).build();
+    }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("")
+    public Response update(EmployeeDTO employeeDTO){
+        return Response.ok().entity(employeeService.update(employeeDTO)).build();
     }
 
     @GET

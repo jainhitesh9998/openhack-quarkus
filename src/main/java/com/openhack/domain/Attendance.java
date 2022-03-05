@@ -30,8 +30,8 @@ public class Attendance {
     @Column(name = "authenticated")
     private Boolean authenticated;
 
-    @Column(name = "mac_address")
-    private String macAddress;
+    @Column(name = "device_identifier")
+    private String deviceIdentifier;
 
     @Column(name = "created_at")
     private Instant createdAt;
@@ -43,8 +43,8 @@ public class Attendance {
     @Column(name = "embedding", columnDefinition = JsonTypes.JSON_BIN)
     private List<Double> embeddings;
 
-    @Column(name = "face_detected")
-    private Boolean faceDetected;
+    @Column(name = "face_identified")
+    private Boolean faceIdentified;
 
     @Column(name = "temperature")
     private Double temperature;
