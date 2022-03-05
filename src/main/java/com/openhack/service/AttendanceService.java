@@ -7,4 +7,5 @@ import java.util.List;
 public interface AttendanceService {
     AttendanceDTO save(AttendanceDTO attendanceDTO);
     List<AttendanceDTO> findByIdentifier(Long id);
+    List<AttendanceDTO> getAll();
 }

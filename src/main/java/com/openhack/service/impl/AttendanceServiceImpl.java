@@ -38,4 +38,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<AttendanceDTO> getAll() {
+        return attendanceRepository.findAll().stream().map(attendanceMapper::toDto).collect(Collectors.toList());
+    }
+
 }

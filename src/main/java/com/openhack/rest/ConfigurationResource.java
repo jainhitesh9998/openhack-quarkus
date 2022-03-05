@@ -9,6 +9,7 @@ import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Optional;
 
 @Path("/api/configuration")
 @PermitAll
@@ -48,4 +49,24 @@ public class ConfigurationResource {
     public Response update(ConfigurationDTO configurationDTO){
         return Response.status(Response.Status.fromStatusCode(200)).entity(configurationService.update(configurationDTO)).build();
     }
+
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{identifier}")
+    public Response getByDeviceIdendifier(@PathParam("identifier") String identifier){
+        Optional<ConfigurationDTO> configurationDTO = configurationService.getConfigByIdentifier(identifier);
+        return !configurationDTO.isEmpty() ? Response.ok(configurationDTO.get()).build() :
+                Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/analytics")
+    public  Response getAnalytics(){
+
+        return Response.ok().entity(configurationService.getAnalytics()).build();
+    }
+
 }

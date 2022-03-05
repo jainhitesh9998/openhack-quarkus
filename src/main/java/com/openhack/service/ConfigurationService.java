@@ -1,5 +1,6 @@
 package com.openhack.service;
 
+import com.openhack.service.dto.AnalyticsDTO;
 import com.openhack.service.dto.ConfigurationDTO;
 
 import java.util.List;
@@ -11,4 +12,5 @@ public interface ConfigurationService {
     List<ConfigurationDTO> getAll();
     Optional<ConfigurationDTO> getConfigByIdentifier(String identifier);
     void updateConfigStatus(String deviceIdentifier, Boolean status);
+    AnalyticsDTO getAnalytics();
 }
