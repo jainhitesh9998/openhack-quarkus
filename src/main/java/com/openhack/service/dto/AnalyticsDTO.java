@@ -15,6 +15,9 @@ public class AnalyticsDTO implements Serializable {
     private Long totalAuth;
     private Long totalAuthInDay;
     private Long uniqueAuthInDay;
+    private Long totalAuthFailure;
+    private Long highTemperatureAlerts;
     private Long activeUsers;
     private Long disabledUsers;
+    private Long totalUsers;
 }

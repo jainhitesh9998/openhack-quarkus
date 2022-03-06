@@ -129,12 +129,24 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         analyticsDTO.setTotalAuthInDay((long) (int) attendanceDTOS.stream().filter(
                 attendanceDTO -> attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
         ).count());
+        analyticsDTO.setTotalAuthFailure(attendanceDTOS.stream().filter(
+                attendanceDTO -> !attendanceDTO.getAuthenticated() && attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
+        ).count());
+        analyticsDTO.setTotalAuthFailure(attendanceDTOS.stream().filter(
+                attendanceDTO -> attendanceDTO.getTemperature() > 99.0 && attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
+        ).count());
         Set<Long> set = new HashSet<>();
         analyticsDTO.setUniqueAuthInDay(attendanceDTOS.stream().filter(
                 attendanceDTO -> attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
         ).filter(
                 attendanceDTO -> set.add(attendanceDTO.getIdentifier())).count()
         );
+
+        analyticsDTO.setActiveUsers(employeeDTOS.stream().filter(
+                EmployeeDTO::getEnabled).count()
+        );
+        analyticsDTO.setDisabledUsers(employeeDTOS.stream().count() - analyticsDTO.getActiveUsers());
+
 
         return analyticsDTO;
 
