@@ -52,5 +52,8 @@ public class Attendance {
     @Column(name = "score")
     private Double score;
 
+    @Column(name = "location")
+    private String location;
+
 
 }

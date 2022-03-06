@@ -20,4 +20,5 @@ public class AttendanceDTO implements Serializable {
     private Boolean faceIdentified;
     private Double temperature;
     private Double score;
+    private String location;
 }

@@ -11,6 +11,7 @@ create sequence sequenceGenerator start 1 increment 50;
         device_identifier varchar(255),
         score float8,
         temperature float8,
+        location varchar(255)
         primary key (id)
     );
 
