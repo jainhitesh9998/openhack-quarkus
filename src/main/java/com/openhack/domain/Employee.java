@@ -7,6 +7,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.List;
 
 @Setter
@@ -32,6 +33,12 @@ public class Employee {
 
     @Column(name = "enabled")
     private Boolean enabled;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "deletion")
+    private Boolean deletion;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     private List<File> files;

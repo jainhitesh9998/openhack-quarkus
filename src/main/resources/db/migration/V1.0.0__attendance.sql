@@ -40,6 +40,8 @@ create sequence sequenceGenerator start 1 increment 50;
         identifier varchar(255),
         name varchar(255),
         enabled boolean,
+        deletion boolean,
+        created_at timestamp,
         primary key (id)
     );
 

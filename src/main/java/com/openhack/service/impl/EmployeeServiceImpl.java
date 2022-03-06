@@ -96,6 +96,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDTO update(EmployeeDTO employeeDTO) {
+        employeeDTO.setCreatedAt(null);
         Optional<Employee> employee = employeeRepository.findByIdOptional(employeeDTO.getId());
         if(employee.isEmpty()){
             throw new CustomException("Employee not registered in system");
@@ -145,12 +146,18 @@ public class EmployeeServiceImpl implements EmployeeService {
             employee = new Employee();
             employee.setIdentifier(username);
             employee.setEncryptionKey("");
-            employee.setName(jsonWebToken.getName());
+            employee.setCreatedAt(Instant.now());
+            employee.setName(jsonWebToken.getClaim("name"));
             employee.setEnabled(true);
             employeeRepository.persist(employee);
+            employee.setDeletion(false);
         } else {
             employee = employeeOptional.get();
         }
+        LOG.info(jsonWebToken.getClaimNames().toString());
+        LOG.info(jsonWebToken.getName());
+        LOG.info(jsonWebToken.getClaim("given_name"));
+//        LOG.info();
 
         EmbeddingDTO embeddingDTO= new EmbeddingDTO();
         embeddingDTO.setEmbedding(embeddings);
