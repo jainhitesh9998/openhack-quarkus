@@ -118,11 +118,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         LOG.info("attendance size {}",attendanceDTOS.size());
         analyticsDTO.setTotalDevices((long) all.size());
         analyticsDTO.setActiveDevices(all.stream().filter(
-                ConfigurationDTO::getStatus
+                configurationDTO1 -> configurationDTO1.getStatus()!=null && configurationDTO1.getStatus()
         ).count());
         analyticsDTO.setInactiveDevices(analyticsDTO.getTotalDevices() - analyticsDTO.getActiveDevices());
         analyticsDTO.setDisabledDevices(all.stream().filter(
-                configurationDTO -> !configurationDTO.getEnabled()
+                configurationDTO -> configurationDTO.getEnabled() == null || !configurationDTO.getEnabled()
         ).count());
 
         analyticsDTO.setTotalAuth((long) attendanceDTOS.size());
@@ -146,7 +146,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         );
 
         analyticsDTO.setActiveUsers(employeeDTOS.stream().filter(
-                EmployeeDTO::getEnabled).count()
+                employeeDTO -> employeeDTO.getEnabled()!= null && employeeDTO.getEnabled()).count()
         );
         analyticsDTO.setDisabledUsers((long) employeeDTOS.size() - analyticsDTO.getActiveUsers());
 
