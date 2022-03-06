@@ -117,12 +117,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Transactional
     public List<Double> retriveEmbedding(MultipartFormDataInput formDataInput) throws IOException {
         Map<String, List<InputPart>> uploadForm = formDataInput.getFormDataMap();
         List<String> fileNames = new ArrayList<>();
         LOG.info("{} ",String.join(" " ,uploadForm.keySet()));
         List<InputPart> inputParts = uploadForm.get("file");
-        List<Double> embeddings = null;
+//        List<Double> embeddings = null;
         for (InputPart inputPart : inputParts) {
                 MultivaluedMap<String, String> header = inputPart.getHeaders();
                 String fileName = getFileName(header);
@@ -133,48 +134,55 @@ public class EmployeeServiceImpl implements EmployeeService {
                 String encoded = Base64.getEncoder().encodeToString(bytes);
                 EmbeddingRequestDTO embeddingRequestDTO = new EmbeddingRequestDTO();
                 embeddingRequestDTO.setImage(encoded);
-                LOG.info("emdedding dto {}", embeddingRequestDTO
-                );
-//            CompletionStage<List<Double>> stage = embeddingsService.sendImageForEmbeddingAsync(embeddingRequestDTO);
-//            stage.whenComplete(
-//                    (doubles, throwable) -> {
-//                        LOG.info("from async {}", doubles.toString());
-//                    }
-//            );
-                embeddings = embeddingsService.getEmbeddings(embeddingRequestDTO);
+                LOG.info("emdedding dto {}", embeddingRequestDTO);
+            String username  = jsonWebToken.getClaim("preferred_username");
+            Optional<Employee> employeeOptional = employeeRepository.findByIdentifierOptional(username);
+            String name = jsonWebToken.getClaim("name");
+            CompletionStage<List<Double>> stage = embeddingsService.sendImageForEmbeddingAsync(embeddingRequestDTO);
+            stage.whenComplete(
+                    (embeddings, throwable) -> {
+                        LOG.info("from async {}", embeddings.toString());
+                        LOG.info("from {}", embeddingRequestDTO);
+//                        embeddings = doubles;
+                        if(embeddings == null || embeddings.isEmpty()){
+                            LOG.info("Custom Exception");
+                            throw new CustomException("Face Not detected");
+                        }
+                        LOG.info("after null check");
+                        Employee employee;
+                        if(employeeOptional.isEmpty()){
+                            employee = new Employee();
+                            employee.setIdentifier(username);
+                            employee.setEncryptionKey("");
+                            employee.setCreatedAt(Instant.now());
+                            employee.setName(name);
+                            employee.setEnabled(true);
+                            employeeRepository.persist(employee);
+                            employee.setDeletion(false);
+                        } else {
+                            employee = employeeOptional.get();
+                        }
+                        EmbeddingDTO embeddingDTO= new EmbeddingDTO();
+                        embeddingDTO.setEmbedding(embeddings);
+                        embeddingDTO.setEmployee(employee);
+                        Embeddings embeddings1 = embeddingsMapper.toEntity(embeddingDTO);
+                        embeddingsRepository.persist(embeddings1);
+                        LOG.info("{} ", embeddingsMapper.toDto(embeddings1));
+                        LOG.info(" {} ", embeddingDTO.getEmbedding().toString());
+                        embeddingsCache.set(embeddingDTO.getEmployee().getId().toString(), embeddingDTO.getEmbedding().toString());
+                    }
+
+            );
+//                embeddings = embeddingsService.getEmbeddings(embeddingRequestDTO);
         }
-        if(embeddings == null){
-            throw new CustomException("Face Not detected");
-        }
-        String username  = jsonWebToken.getClaim("preferred_username");
-        Optional<Employee> employeeOptional = employeeRepository.findByIdentifierOptional(username);
-        Employee employee;
-        if(employeeOptional.isEmpty()){
-            employee = new Employee();
-            employee.setIdentifier(username);
-            employee.setEncryptionKey("");
-            employee.setCreatedAt(Instant.now());
-            employee.setName(jsonWebToken.getClaim("name"));
-            employee.setEnabled(true);
-            employeeRepository.persist(employee);
-            employee.setDeletion(false);
-        } else {
-            employee = employeeOptional.get();
-        }
+
         LOG.info(jsonWebToken.getClaimNames().toString());
         LOG.info(jsonWebToken.getName());
         LOG.info(jsonWebToken.getClaim("given_name"));
 //        LOG.info();
 
-        EmbeddingDTO embeddingDTO= new EmbeddingDTO();
-        embeddingDTO.setEmbedding(embeddings);
-        embeddingDTO.setEmployee(employee);
-        Embeddings embeddings1 = embeddingsMapper.toEntity(embeddingDTO);
-        embeddingsRepository.persist(embeddings1);
-        LOG.info("{} ", embeddingsMapper.toDto(embeddings1));
-        LOG.info(" {} ", embeddingDTO.getEmbedding().toString());
-        embeddingsCache.set(embeddingDTO.getEmployee().getId().toString(), embeddingDTO.getEmbedding().toString());
-        return embeddings;
+
+        return null;
     }
 
     @Override
