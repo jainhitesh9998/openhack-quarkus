@@ -69,4 +69,13 @@ public class ConfigurationResource {
         return Response.ok().entity(configurationService.getAnalytics()).build();
     }
 
+    @DELETE
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{id}")
+    public Response delete(@PathParam("id") Long id){
+        configurationService.delete(id);
+        return Response.noContent().build();
+    }
+
 }

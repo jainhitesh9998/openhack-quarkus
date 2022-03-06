@@ -154,4 +154,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return analyticsDTO;
 
     }
+
+    @Override
+    public void delete(Long id) {
+        boolean b = configurationRepository.deleteById(id);
+        LOG.info("Deleted {}", b);
+    }
 }

@@ -13,4 +13,5 @@ public interface ConfigurationService {
     Optional<ConfigurationDTO> getConfigByIdentifier(String identifier);
     void updateConfigStatus(String deviceIdentifier, Boolean status);
     AnalyticsDTO getAnalytics();
+    void delete(Long id);
 }
