@@ -115,7 +115,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         List<AttendanceDTO> attendanceDTOS = attendanceService.getAll();
         List<EmployeeDTO> employeeDTOS = employeeService.findAll();
         AnalyticsDTO analyticsDTO = new AnalyticsDTO();
-
+        LOG.info("attendance size {}",attendanceDTOS.size());
         analyticsDTO.setTotalDevices((long) all.size());
         analyticsDTO.setActiveDevices(all.stream().filter(
                 ConfigurationDTO::getStatus
@@ -130,13 +130,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                 attendanceDTO -> attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
         ).count());
 
-        analyticsDTO.setTotalAuthFailure(attendanceDTOS.stream().filter(attendanceDTO ->  attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))).
-                filter(
-                attendanceDTO -> !attendanceDTO.getAuthenticated())
+        analyticsDTO.setTotalAuthFailure(attendanceDTOS.stream()
+                .filter(attendanceDTO ->  attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400)))
+                .filter(attendanceDTO -> attendanceDTO.getAuthenticated() == null || !attendanceDTO.getAuthenticated())
         .count());
 
         analyticsDTO.setHighTemperatureAlerts(attendanceDTOS.stream().filter(
-                attendanceDTO -> attendanceDTO.getTemperature() > 99.0 && attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
+                attendanceDTO ->attendanceDTO.getTemperature() != null && attendanceDTO.getTemperature() > 99.0 && attendanceDTO.getCreatedAt().isAfter(Instant.now().minusSeconds(86400))
         ).count());
         Set<Long> set = new HashSet<>();
         analyticsDTO.setUniqueAuthInDay(attendanceDTOS.stream().filter(

@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -134,6 +135,12 @@ public class EmployeeServiceImpl implements EmployeeService {
                 embeddingRequestDTO.setImage(encoded);
                 LOG.info("emdedding dto {}", embeddingRequestDTO
                 );
+//            CompletionStage<List<Double>> stage = embeddingsService.sendImageForEmbeddingAsync(embeddingRequestDTO);
+//            stage.whenComplete(
+//                    (doubles, throwable) -> {
+//                        LOG.info("from async {}", doubles.toString());
+//                    }
+//            );
                 embeddings = embeddingsService.getEmbeddings(embeddingRequestDTO);
         }
         if(embeddings == null){
@@ -260,6 +267,8 @@ public class EmployeeServiceImpl implements EmployeeService {
             EmbeddingRequestDTO embeddingRequestDTO = new EmbeddingRequestDTO();
             embeddingRequestDTO.setImage(encoded);
             embeddings = embeddingsService.getEmbeddings(embeddingRequestDTO);
+//            CompletionStage<List<Double>> stage = embeddingsService.sendImageForEmbeddingAsync(embeddingRequestDTO);
+//            LOG.info(sta);
         }
         if(embeddings == null || embeddings.isEmpty()){
             throw new CustomException("Face Not detected");

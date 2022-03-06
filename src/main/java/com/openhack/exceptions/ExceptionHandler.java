@@ -17,6 +17,7 @@ public class ExceptionHandler implements ExceptionMapper<RuntimeException> {
     public Response toResponse(RuntimeException e) {
         if(e.getClass() == NullPointerException.class || e.getClass() == CustomException.class ){
             LOG.error("Some error occurred");
+            e.printStackTrace();
             return Response.status(Response.Status.BAD_REQUEST).entity(new ErrorMessage(
                     LocalDateTime.now(),
                     Response.Status.BAD_REQUEST,
