@@ -84,7 +84,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 //        configurationRepository.
         return configurationRepository.listAll(Sort.by("updated_at").descending()).stream().map(configurationMapper::toDto)
                 .peek(configurationDTO -> {
-                    if(configurationDTO.getUpdatedAt().isBefore(Instant.now().minusSeconds(60))){
+                    if(configurationDTO.getUpdatedAt().isBefore(Instant.now().minusSeconds(600))){
                         configurationDTO.setStatus(false);
                     }
                 }).collect(Collectors.toList());
